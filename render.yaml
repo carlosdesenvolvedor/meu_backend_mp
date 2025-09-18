@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: meu-backend-mp
+    env: node
+    plan: free # Comece com o plano gratuito
+    buildCommand: "npm install"
+    startCommand: "node index.js"
+    envVars:
+      - key: NODE_VERSION
+        value: 18 # Use uma versão LTS do Node.js
+      - key: MP_TOKEN_SJP
+        fromSecret: MP_TOKEN_SJP # Nome do segredo no Render
+      - key: MP_SECRET_SJP
+        fromSecret: MP_SECRET_SJP
+      - key: MP_TOKEN_AMARELA
+        fromSecret: MP_TOKEN_AMARELA
+      - key: MP_SECRET_AMARELA
+        fromSecret: MP_SECRET_AMARELA
