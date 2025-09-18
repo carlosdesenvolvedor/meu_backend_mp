@@ -60,19 +60,20 @@ exports.createDeviceOrder = async (req, res) => {
         }
 
         const amountInCents = Math.round(parseFloat(amount) * 100);
+        // Remover 'metadata' de 'additional_info' pois não é permitido pela API do Mercado Pago
         const paymentIntentRequest = {
             amount: amountInCents,
             description: description,
             additional_info: {
                 external_reference: externalReference,
                 print_on_terminal: true,
-                metadata: { ...metadata, account_identifier: credentials.accountId },
+                // metadata removido para evitar erro 500
             },
             payment: {
                 type: tipoPagamentoNaMaquininha === "Crédito" ? "credit_card" : "debit_card",
             },
-
         };
+        // Se precisar passar account_identifier, pode adicionar em external_reference ou outro campo permitido
 
         if (paymentIntentRequest.payment.type === "credit_card") {
             paymentIntentRequest.payment.installments = (installments > 0) ? installments : 1;
