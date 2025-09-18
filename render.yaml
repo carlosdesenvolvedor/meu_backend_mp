@@ -7,12 +7,10 @@ services:
     startCommand: "node index.js"
     envVars:
       - key: NODE_VERSION
-        value: 18 # Use uma versão LTS do Node.js
+        value: "18" # Usa a versão 18 LTS do Node.js
       - key: MP_TOKEN_SJP
-        fromSecret: MP_TOKEN_SJP # Nome do segredo no Render
+        fromSecret: MP_TOKEN_SJP
       - key: MP_SECRET_SJP
         fromSecret: MP_SECRET_SJP
-      - key: MP_TOKEN_AMARELA
-        fromSecret: MP_TOKEN_AMARELA
-      - key: MP_SECRET_AMARELA
-        fromSecret: MP_SECRET_AMARELA
+      - key: PORT
+        value: "3000"
