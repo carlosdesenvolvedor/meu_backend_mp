@@ -12,5 +12,11 @@ services:
         fromSecret: MP_TOKEN_SJP
       - key: MP_SECRET_SJP
         fromSecret: MP_SECRET_SJP
+      - key: MP_TOKEN_AMARELA
+        fromSecret: MP_TOKEN_AMARELA
+      - key: MP_SECRET_AMARELA
+        fromSecret: MP_SECRET_AMARELA
+      - key: FIREBASE_SERVICE_ACCOUNT_BASE64
+        fromSecret: FIREBASE_SERVICE_ACCOUNT_BASE64
       - key: PORT
         value: "3000"
