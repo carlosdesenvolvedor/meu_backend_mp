@@ -66,11 +66,11 @@ exports.createDeviceOrder = async (req, res) => {
             additional_info: {
                 external_reference: externalReference,
                 print_on_terminal: true,
-                metadata: { ...metadata, account_identifier: credentials.accountId },
             },
             payment: {
                 type: tipoPagamentoNaMaquininha === "Crédito" ? "credit_card" : "debit_card",
             },
+            metadata: { ...metadata, account_identifier: credentials.accountId },
         };
 
         if (paymentIntentRequest.payment.type === "credit_card") {
