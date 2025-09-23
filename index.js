@@ -41,6 +41,14 @@ app.get("/", (req, res) => {
     res.send("Servidor do Mercado Pago está no ar! 🚀");
 });
 
+// NOVO ENDPOINT DE HEALTH CHECK
+// Este endpoint não faz nada, apenas responde que o servidor está online.
+// Use esta URL no seu serviço de Cron Job.
+app.get('/api/v1/health', (req, res) => {
+    console.log('Health check endpoint foi chamado com sucesso.');
+    res.status(200).send({ status: 'ok', message: 'Server is alive.' });
+});
+
 // Usar as rotas da API
 // Todas as rotas aqui começarão com /api/v1
 app.use("/api/v1", mercadoPagoRoutes);
