@@ -153,12 +153,22 @@ exports.cancelDeviceOrder = async (req, res) => {
 
         // --- LÓGICA DE VERIFICAÇÃO DE ESTADO APRIMORADA ---
         // Verifica se a ordem já está em um estado final que não permite cancelamento.
-        const finalStates = ["CANCELED", "FINISHED", "EXPIRED"];
-        if (finalStates.includes(intentDetails.state)) {
-            console.log(`INFO: Tentativa de cancelar ordem que já está no estado final '${intentDetails.state}'.`);
+        const uncancellableStates = ["CANCELED", "FINISHED", "EXPIRED", "ON_TERMINAL"];
+        if (uncancellableStates.includes(intentDetails.state)) {
+            console.log(`INFO: Tentativa de cancelar ordem no estado '${intentDetails.state}', que não permite cancelamento via API.`);
+
+            // Se o estado for 'ON_TERMINAL', é um conflito real. O app precisa saber disso.
+            if (intentDetails.state === 'ON_TERMINAL') {
+                return res.status(409).json({
+                    error: "Conflito: A ordem já está sendo processada na maquininha e não pode ser cancelada agora.",
+                    details: `Current state is ${intentDetails.state}`
+                });
+            }
+
+            // Para outros estados finais (CANCELED, FINISHED, EXPIRED), o resultado é o desejado.
             // Retorna um status de sucesso para o app, pois o resultado final é o desejado (ordem não está mais ativa).
             // O 'already_canceled' pode ser interpretado como 'already_finalized' pelo app.
-            return res.status(200).json({ id: paymentIntentId, status: "already_canceled" });
+            return res.status(200).json({ id: paymentIntentId, status: "already_finalized" });
         }
 
         // Se a ordem estiver em um estado que permite cancelamento (ex: "OPEN"), prossegue.
