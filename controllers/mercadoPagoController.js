@@ -151,10 +151,18 @@ exports.cancelDeviceOrder = async (req, res) => {
         const point = new Point(credentials.client);
         const intentDetails = await point.searchPaymentIntent({ payment_intent_id: paymentIntentId });
 
-        if (intentDetails.state === "CANCELED") {
+        // --- LÓGICA DE VERIFICAÇÃO DE ESTADO APRIMORADA ---
+        // Verifica se a ordem já está em um estado final que não permite cancelamento.
+        const finalStates = ["CANCELED", "FINISHED", "EXPIRED"];
+        if (finalStates.includes(intentDetails.state)) {
+            console.log(`INFO: Tentativa de cancelar ordem que já está no estado final '${intentDetails.state}'.`);
+            // Retorna um status de sucesso para o app, pois o resultado final é o desejado (ordem não está mais ativa).
+            // O 'already_canceled' pode ser interpretado como 'already_finalized' pelo app.
             return res.status(200).json({ id: paymentIntentId, status: "already_canceled" });
         }
 
+        // Se a ordem estiver em um estado que permite cancelamento (ex: "OPEN"), prossegue.
+        console.log(`INFO: Ordem no estado '${intentDetails.state}'. Prosseguindo com o cancelamento.`);
         const mpResponse = await point.cancelPaymentIntent({
             device_id: deviceId,
             payment_intent_id: paymentIntentId,
