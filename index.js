@@ -53,6 +53,23 @@ app.get('/api/v1/health', (req, res) => {
 // Todas as rotas aqui começarão com /api/v1
 app.use("/api/v1", mercadoPagoRoutes);
 
+// --- NOVO: Middleware de Tratamento de Erros Global ---
+// Este middleware deve ser a ÚLTIMA coisa a ser adicionada com app.use().
+// Ele captura qualquer erro que ocorra nas rotas acima.
+app.use((error, req, res, next) => {
+    // Loga o erro completo no console do seu servidor (Render)
+    // Isso é crucial para a depuração.
+    console.error("--- ERRO NÃO TRATADO CAPTURADO ---");
+    console.error("Rota:", req.method, req.originalUrl);
+    console.error("Corpo da Requisição:", req.body);
+    console.error("Erro:", error); // Loga o objeto de erro completo
+    console.error("Stack Trace:", error.stack); // Mostra a "pilha" de onde o erro veio
+    console.error("--- FIM DO ERRO ---");
+
+    // Envia uma resposta de erro genérica e segura para o cliente, sem travar o servidor.
+    res.status(500).json({ error: "Ocorreu um erro interno no servidor." });
+});
+
 // Iniciar o servidor
 app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
