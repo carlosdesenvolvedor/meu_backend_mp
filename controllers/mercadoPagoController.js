@@ -162,10 +162,19 @@ exports.cancelDeviceOrder = async (req, res) => {
 
         res.status(200).json(mpResponse);
     } catch (error) {
-        console.error("Erro em cancelDeviceOrder:", error.cause || error);
-        const status = error.statusCode || 500;
+        // --- MELHORIA NO LOG DE ERRO ---
+        // Loga o erro completo para depuração no Render, similar ao middleware global.
+        console.error("--- ERRO CAPTURADO EM cancelDeviceOrder ---");
+        console.error("Rota:", req.method, req.originalUrl);
+        console.error("Corpo da Requisição:", req.body);
+        console.error("Mensagem do Erro:", error.message);
+        console.error("Causa do Erro (SDK):", error.cause); // O mais importante para erros do Mercado Pago
+        console.error("Stack Trace:", error.stack);
+        console.error("--- FIM DO ERRO ---");
+
+        const status = error.statusCode || error.cause?.statusCode || 500;
         if (status === 409) {
-            return res.status(409).json({ error: "Conflito: A ordem não pode ser cancelada.", details: error.cause?.body });
+            return res.status(409).json({ error: "Conflito: A ordem não pode ser cancelada.", details: error.cause?.body || error.message });
         }
         res.status(status).json({ error: "Falha ao cancelar ordem", details: error.cause?.body || error.message });
     }
