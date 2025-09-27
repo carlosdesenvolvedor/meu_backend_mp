@@ -44,9 +44,29 @@ app.get("/", (req, res) => {
 // NOVO ENDPOINT DE HEALTH CHECK
 // Este endpoint não faz nada, apenas responde que o servidor está online.
 // Use esta URL no seu serviço de Cron Job.
-app.get('/api/v1/health', (req, res) => {
-    console.log('Health check endpoint foi chamado com sucesso.');
-    res.status(200).send({ status: 'ok', message: 'Server is alive.' });
+app.get('/api/v1/health', async (req, res) => {
+    const startTime = Date.now();
+    try {
+        // 1. Simula uma operação real lendo um documento do Firestore.
+        // Isso "aquece" a conexão com o banco de dados.
+        const db = admin.firestore();
+        // Faz uma consulta leve para buscar apenas 1 documento da coleção de vendedores.
+        await db.collection('vendedores').limit(1).get();
+
+        // 2. Adiciona um pequeno atraso intencional para garantir que a requisição não seja instantânea.
+        await new Promise(resolve => setTimeout(resolve, 200)); // Atraso de 200ms
+
+        const duration = Date.now() - startTime;
+        console.log(`Health check "forte" bem-sucedido. Duração: ${duration}ms.`);
+        res.status(200).send({ status: 'ok', message: 'Server is warm and alive.', duration_ms: duration });
+
+    } catch (error) {
+        const duration = Date.now() - startTime;
+        console.error(`ERRO no Health Check: ${error.message}. Duração: ${duration}ms.`);
+        // Mesmo em caso de erro (ex: Firestore offline), responde com erro de servidor
+        // mas não derruba a aplicação.
+        res.status(500).send({ status: 'error', message: 'Health check failed.', error: error.message, duration_ms: duration });
+    }
 });
 
 // Usar as rotas da API
