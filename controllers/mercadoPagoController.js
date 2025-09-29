@@ -302,6 +302,47 @@ exports.createPreference = async (req, res) => {
     }
 };
 
+exports.cancelPixOrder = async (req, res) => {
+    try {
+        const { paymentId } = req.body;
+        if (!paymentId) {
+            return res.status(400).json({ error: "Campo 'paymentId' é obrigatório." });
+        }
+
+        // PIX geralmente usa uma conta principal, mas pode ser adaptado se necessário
+        const credentials = getClientAndSecrets("sjp");
+        if (!credentials) {
+            return res.status(500).json({ error: "Falha na configuração do servidor." });
+        }
+
+        const payment = new Payment(credentials.client);
+
+        // 1. Busca o pagamento para verificar o status atual
+        const currentPayment = await payment.get({ id: paymentId });
+
+        // 2. Verifica se o pagamento pode ser cancelado
+        if (currentPayment.status === 'cancelled') {
+            console.log(`INFO: Tentativa de cancelar pagamento PIX ${paymentId} que já está cancelado.`);
+            return res.status(200).json({ id: currentPayment.id, status: 'cancelled', message: 'Pagamento já estava cancelado.' });
+        }
+
+        if (currentPayment.status !== 'pending') {
+            console.warn(`WARN: Tentativa de cancelar pagamento PIX ${paymentId} com status '${currentPayment.status}'.`);
+            return res.status(409).json({ error: "Conflito: O pagamento não está pendente e não pode ser cancelado.", current_status: currentPayment.status });
+        }
+
+        // 3. Procede com o cancelamento
+        console.log(`INFO: Cancelando pagamento PIX ${paymentId} com status '${currentPayment.status}'.`);
+        const mpResponse = await payment.cancel({ id: paymentId });
+
+        res.status(200).json(mpResponse);
+    } catch (error) {
+        console.error("Erro em cancelPixOrder:", error.cause || error);
+        const status = error.statusCode || 500;
+        res.status(status).json({ error: "Falha ao cancelar ordem PIX", details: error.cause?.body || error.message });
+    }
+};
+
 exports.webhookHandler = async (req, res) => {
     console.log("INFO: Webhook recebido:", { headers: req.headers, body: req.body });
 

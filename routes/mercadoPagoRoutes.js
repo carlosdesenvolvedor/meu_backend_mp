@@ -15,6 +15,7 @@ router.post("/cancel-device-order", mpController.cancelDeviceOrder);
 // Rotas para PIX
 router.post("/create-pix-order", mpController.createPixOrder);
 router.get("/get-pix-status", mpController.getPixStatus);
+router.post("/cancel-pix-order", mpController.cancelPixOrder); // <-- ADICIONE ESTA LINHA
 
 // Rota para Checkout Pro (Pagamento Online)
 router.post("/create-preference", mpController.createPreference);

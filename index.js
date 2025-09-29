@@ -32,8 +32,9 @@ const PORT = process.env.PORT || 3000;
 // Middlewares
 app.use(cors()); // Permite requisições de outras origens (seu app Flutter)
 
-// ATENÇÃO: O middleware express.json() deve vir ANTES das rotas,
-// mas o webhook precisa de uma exceção. O roteador cuidará disso.
+// O middleware express.json() é aplicado ANTES das rotas que o necessitam.
+// A rota de webhook, que precisa do corpo "raw", é tratada de forma especial
+// dentro do arquivo de rotas (mercadoPagoRoutes.js).
 app.use(express.json());
 
 // Rota de "saúde" do servidor
