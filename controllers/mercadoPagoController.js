@@ -271,30 +271,93 @@ exports.getPixStatus = async (req, res) => {
 
 exports.createPreference = async (req, res) => {
     try {
-        const { items, externalReference, ...rest } = req.body;
+        const { items, externalReference, payer, notification_url, issuer_id, back_urls, auto_return, ...rest } = req.body;
+
+        // Validações básicas obrigatórias
         if (!items || !Array.isArray(items) || items.length === 0 || !externalReference) {
             return res.status(400).json({ error: "Campos 'items' e 'externalReference' são obrigatórios." });
         }
+
+        // Validações recomendadas (payer.email é obrigatória pela pontuação)
+        if (!payer || !payer.email) {
+            return res.status(400).json({ error: "Campo obrigatório 'payer.email' ausente. Forneça o e-mail do comprador." });
+        }
+
         const credentials = getClientAndSecrets("sjp");
         if (!credentials) {
             return res.status(500).json({ error: "Falha na configuração do servidor." });
         }
+
+        // Normaliza e enriquece os items para garantir campos recomendados
+        const normalizedItems = items.map((it, idx) => {
+            const normalized = {
+                id: it.id || (`item_${idx + 1}`),
+                title: it.title || it.name || `Item ${idx + 1}`,
+                description: it.description || it.title || "",
+                category_id: it.category_id || it.category || undefined,
+                quantity: (typeof it.quantity === 'number') ? it.quantity : parseInt(it.quantity, 10) || 1,
+                unit_price: (typeof it.unit_price === 'number') ? it.unit_price : parseFloat(it.unit_price) || parseFloat(it.price) || 0.0,
+            };
+            // Remove chaves undefined para evitar payloads com valores inválidos
+            Object.keys(normalized).forEach(k => normalized[k] === undefined && delete normalized[k]);
+            return normalized;
+        });
+
+        // Monta o objeto payer com campos recomendados
+        const payerPayload = {
+            email: payer.email,
+        };
+        if (payer.first_name) payerPayload.first_name = payer.first_name;
+        if (payer.last_name) payerPayload.last_name = payer.last_name;
+        if (payer.phone) payerPayload.phone = payer.phone;
+        if (payer.identification) payerPayload.identification = payer.identification;
+        if (payer.address) payerPayload.address = payer.address;
+
+        // notification_url é obrigatório para conciliação financeira
+        const notificationUrlToUse = notification_url || process.env.DEFAULT_NOTIFICATION_URL || null;
+        if (!notificationUrlToUse) {
+            return res.status(400).json({ error: "Campo obrigatório 'notification_url' ausente. Defina no corpo ou na variável DEFAULT_NOTIFICATION_URL." });
+        }
+
+        // Monta o corpo da preferência, incluindo issuer_id quando fornecido
         const preference = new Preference(credentials.client);
-        const mpResponse = await preference.create({
-            body: {
-                items,
-                external_reference: externalReference,
-                back_urls: rest.back_urls || {
-                    success: "https://loja-vendas-fazplay.web.app/success",
-                    failure: "https://loja-vendas-fazplay.web.app/failure",
-                    pending: "https://loja-vendas-fazplay.web.app/pending",
-                },
-                auto_return: rest.auto_return || "approved",
-                ...rest,
+        const body = {
+            items: normalizedItems,
+            external_reference: externalReference,
+            payer: payerPayload,
+            notification_url: notificationUrlToUse,
+            back_urls: back_urls || {
+                success: "https://loja-vendas-fazplay.web.app/success",
+                failure: "https://loja-vendas-fazplay.web.app/failure",
+                pending: "https://loja-vendas-fazplay.web.app/pending",
             },
+            auto_return: auto_return || "approved",
+            metadata: {
+                created_by: "meu-backend-mp",
+                ...rest.metadata,
+            },
+            ...rest,
+        };
+
+        if (issuer_id) {
+            // issuer_id faz sentido quando há um meio de pagamento selecionado; adiciona ao body para compatibilidade
+            body.issuer_id = issuer_id;
+        }
+
+        console.log("INFO: Criando preferência com payload:", { external_reference: externalReference, items_count: normalizedItems.length, payer: payerPayload.email, notification_url: notificationUrlToUse });
+
+        const mpResponse = await preference.create({
+            body,
             requestOptions: { idempotencyKey: uuidv4() },
         });
-        res.status(201).json(mpResponse);
+
+        // Retorna apenas campos essenciais ao cliente e loga o restante
+        res.status(201).json({
+            id: mpResponse.id,
+            init_point: mpResponse.init_point || mpResponse.sandbox_init_point || null,
+            status: mpResponse.status || 'created',
+            preference: mpResponse,
+        });
     } catch (error) {
         console.error("Erro em createPreference:", error.cause || error);
         const status = error.statusCode || 500;
