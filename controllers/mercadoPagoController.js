@@ -321,6 +321,20 @@ exports.createPreference = async (req, res) => {
 
         // Monta o corpo da preferência, incluindo issuer_id quando fornecido
         const preference = new Preference(credentials.client);
+        // Prepara metadata de forma segura (evita spread de undefined)
+        const providedMetadata = rest.metadata || {};
+        const metadataObj = {
+            created_by: "meu-backend-mp",
+            target_collection: providedMetadata.target_collection || providedMetadata.targetCollection || providedMetadata.target || null,
+            ...providedMetadata,
+        };
+
+        // Se não houver target_collection, usa o padrão da variável de ambiente ou 'vendas'
+        if (!metadataObj.target_collection) {
+            metadataObj.target_collection = process.env.DEFAULT_TARGET_COLLECTION || 'vendas';
+            console.info("INFO: metadata.target_collection ausente — definindo padrão:", metadataObj.target_collection);
+        }
+
         const body = {
             items: normalizedItems,
             external_reference: externalReference,
@@ -332,10 +346,7 @@ exports.createPreference = async (req, res) => {
                 pending: "https://loja-vendas-fazplay.web.app/pending",
             },
             auto_return: auto_return || "approved",
-            metadata: {
-                created_by: "meu-backend-mp",
-                ...rest.metadata,
-            },
+            metadata: metadataObj,
             ...rest,
         };
 
@@ -346,10 +357,55 @@ exports.createPreference = async (req, res) => {
 
         console.log("INFO: Criando preferência com payload:", { external_reference: externalReference, items_count: normalizedItems.length, payer: payerPayload.email, notification_url: notificationUrlToUse });
 
+        if (process.env.MP_DEBUG === 'true') {
+            // Loga o body completo (útil para debugging) - cuidado com dados sensíveis em produção
+            console.log("MP_DEBUG: preference body:", JSON.stringify(body, null, 2));
+        }
+
         const mpResponse = await preference.create({
             body,
             requestOptions: { idempotencyKey: uuidv4() },
         });
+
+        if (process.env.MP_DEBUG === 'true') {
+            console.log("MP_DEBUG: resposta do SDK preference.create:", JSON.stringify(mpResponse, null, 2));
+        }
+
+        // DIAGNÓSTICOS ADICIONAIS (logs que auxiliam a descoberta de falhas de medição)
+        // 1) Aviso se notification_url for localhost (o Mercado Pago não consegue enviar webhook para localhost)
+        if (/localhost|127\.0\.0\.1/.test(notificationUrlToUse)) {
+            console.warn("WARN: notification_url aponta para localhost/127.0.0.1. O Mercado Pago não poderá enviar webhooks a URLs locais. Use uma URL pública (ngrok ou domínio).", { notification_url: notificationUrlToUse });
+        }
+
+        // 2) Aviso se payer faltar first_name/last_name (recomendado)
+        if (!payer.first_name || !payer.last_name) {
+            console.warn("WARN: payer.first_name ou payer.last_name ausente — campo recomendado para aumentar taxa de aprovação.", { first_name: payer.first_name, last_name: payer.last_name });
+        }
+
+        // 3) Para cada item, logar campos recomendados faltantes (categoria, descrição, id, title, unit_price)
+        normalizedItems.forEach((it, idx) => {
+            const missing = [];
+            if (!it.category_id) missing.push('category_id');
+            if (!it.description) missing.push('description');
+            if (!it.id) missing.push('id');
+            if (!it.title) missing.push('title');
+            if (!it.unit_price || Number(it.unit_price) <= 0) missing.push('unit_price');
+            if (missing.length > 0) {
+                console.warn(`WARN: item[${idx}] está faltando campos recomendados: ${missing.join(', ')}`, { item: it });
+            }
+        });
+
+        // 3b) Validação crítica: não permitimos items com unit_price <= 0 — isso prejudica aprovação
+        const itemsWithInvalidPrice = normalizedItems.filter((it) => !it.unit_price || Number(it.unit_price) <= 0);
+        if (itemsWithInvalidPrice.length > 0) {
+            console.error('ERROR: Encontrados items com unit_price inválido (<=0). Abortando criação de preferência.', { invalid_items: itemsWithInvalidPrice });
+            return res.status(400).json({ error: 'Alguns items possuem unit_price inválido (<=0). Envie preços válidos para todos os itens.', invalid_items: itemsWithInvalidPrice });
+        }
+
+        // 4) Aviso se metadata.target_collection ausente (o webhook depende dela para atualizar Firestore)
+        if (!metadataObj.target_collection) {
+            console.warn("WARN: metadata.target_collection ausente. O webhook pode não conseguir atualizar o Firestore sem essa informação.", { metadata: metadataObj });
+        }
 
         // Retorna apenas campos essenciais ao cliente e loga o restante
         res.status(201).json({
