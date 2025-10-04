@@ -1,28 +1,36 @@
 {
-  "externalReference": "VENDA_TEST_0001",
-  "items": [
-    {
-      "id": "PROD_001",
-      "title": "Camiseta Azul",
-      "description": "Camiseta 100% algodão - Tamanho M",
-      "category_id": "apparel",
-      "quantity": 2,
-      "unit_price": 49.9
+    "externalReference": "VENDA_TEST_0001",
+    "items": [
+        {
+            "id": "PROD_001",
+            "title": "Camiseta Azul",
+            "description": "Camiseta 100% algodão - Tamanho M",
+            "category_id": "apparel",
+            "quantity": 2,
+            "unit_price": 49.9
+        }
+    ],
+    "payer": {
+        "email": "cliente+teste@example.com",
+        "first_name": "João",
+        "last_name": "Silva",
+        "phone": {
+            "area_code": "11",
+            "number": "999999999"
+        },
+        "identification": {
+            "type": "CPF",
+            "number": "00000000000"
+        }
+    },
+    "notification_url": "https://SEU_DOMINIO_PUBLICO/api/v1/webhook",
+    "back_urls": {
+        "success": "https://loja.example/success",
+        "failure": "https://loja.example/failure",
+        "pending": "https://loja.example/pending"
+    },
+    "auto_return": "approved",
+    "metadata": {
+        "target_collection": "vendas"
     }
-  ],
-  "payer": {
-    "email": "cliente+teste@example.com",
-    "first_name": "João",
-    "last_name": "Silva",
-    "phone": { "area_code": "11", "number": "999999999" },
-    "identification": { "type": "CPF", "number": "00000000000" }
-  },
-  "notification_url": "https://SEU_DOMINIO_PUBLICO/api/v1/webhook",
-  "back_urls": {
-    "success": "https://loja.example/success",
-    "failure": "https://loja.example/failure",
-    "pending": "https://loja.example/pending"
-  },
-  "auto_return": "approved",
-  "metadata": { "target_collection": "vendas" }
 }
