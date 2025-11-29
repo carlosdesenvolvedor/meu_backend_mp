@@ -102,7 +102,7 @@ exports.getDevicePaymentStatus = async (req, res) => {
         }
 
         // Identifica a conta pelo ID do dispositivo (adapte se necessário)
-        const accountIdentifier = deviceId.startsWith("ID_DA_MAQUININHA_AMARELA") ? "amarela" : "sjp";
+        const accountIdentifier = deviceId.startsWith("NEWLAND") ? "amarela" : "sjp";
         const credentials = getClientAndSecrets(accountIdentifier);
         if (!credentials) {
             return res.status(500).json({ error: "Falha na configuração do servidor." });
@@ -142,7 +142,7 @@ exports.cancelDeviceOrder = async (req, res) => {
             return res.status(400).json({ error: "Campos 'deviceId' e 'paymentIntentId' são obrigatórios." });
         }
 
-        const accountIdentifier = deviceId.startsWith("ID_DA_MAQUININHA_AMARELA") ? "amarela" : "sjp";
+        const accountIdentifier = deviceId.startsWith("NEWLAND") ? "amarela" : "sjp";
         const credentials = getClientAndSecrets(accountIdentifier);
         if (!credentials) {
             return res.status(500).json({ error: "Falha na configuração do servidor." });
@@ -154,7 +154,7 @@ exports.cancelDeviceOrder = async (req, res) => {
         // --- LÓGICA DE VERIFICAÇÃO DE ESTADO APRIMORADA ---
         // Verifica se a ordem já está em um estado final que não permite cancelamento.
         const uncancellableStates = ["CANCELED", "FINISHED", "EXPIRED", "ON_TERMINAL"];
-        if (uncancellableStates.includes(intentDetails.state)) {            
+        if (uncancellableStates.includes(intentDetails.state)) {
 
             // Se o estado for 'ON_TERMINAL', é um conflito real. O app precisa saber disso.
             if (intentDetails.state === 'ON_TERMINAL') {
