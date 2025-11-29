@@ -207,7 +207,7 @@ exports.createPixOrder = async (req, res) => {
             return res.status(400).json({ error: "Campos obrigatórios ausentes para Pix." });
         }
 
-        const credentials = getClientAndSecrets("sjp"); // Pix geralmente usa uma conta principal
+        const credentials = getClientAndSecrets("amarela"); // Pix agora usa a conta AMARELA
         if (!credentials) {
             return res.status(500).json({ error: "Falha na configuração do servidor." });
         }
@@ -254,7 +254,7 @@ exports.getPixStatus = async (req, res) => {
         if (!paymentId) {
             return res.status(400).json({ error: "Parâmetro 'paymentId' ausente." });
         }
-        const credentials = getClientAndSecrets("sjp");
+        const credentials = getClientAndSecrets("amarela");
         if (!credentials) {
             return res.status(500).json({ error: "Falha na configuração do servidor." });
         }
@@ -282,7 +282,7 @@ exports.createPreference = async (req, res) => {
             return res.status(400).json({ error: "Campo obrigatório 'payer.email' ausente. Forneça o e-mail do comprador." });
         }
 
-        const credentials = getClientAndSecrets("sjp");
+        const credentials = getClientAndSecrets("amarela");
         if (!credentials) {
             return res.status(500).json({ error: "Falha na configuração do servidor." });
         }
@@ -428,7 +428,7 @@ exports.cancelPixOrder = async (req, res) => {
         }
 
         // PIX geralmente usa uma conta principal, mas pode ser adaptado se necessário
-        const credentials = getClientAndSecrets("sjp");
+        const credentials = getClientAndSecrets("amarela");
         if (!credentials) {
             return res.status(500).json({ error: "Falha na configuração do servidor." });
         }
