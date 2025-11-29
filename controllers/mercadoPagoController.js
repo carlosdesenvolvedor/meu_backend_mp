@@ -15,15 +15,15 @@ const getClientAndSecrets = (accountIdentifier) => {
     if (accountIdentifier === "amarela") {
         accessToken = process.env.MP_TOKEN_AMARELA;
         webhookSecret = process.env.MP_SECRET_AMARELA;
-        console.log("INFO: Usando credenciais da conta AMARELA.");
+        // console.log("INFO: Usando credenciais da conta AMARELA.");
     } else {
         accessToken = process.env.MP_TOKEN_SJP;
         webhookSecret = process.env.MP_SECRET_SJP;
-        console.log("INFO: Usando credenciais da conta SJP (Padrão).");
+        // console.log("INFO: Usando credenciais da conta SJP (Padrão).");
     }
 
     if (!accessToken || !webhookSecret) {
-        console.error(`ERRO: Credenciais não encontradas para a conta: ${accountIdentifier}`);
+        // console.error(`ERRO: Credenciais não encontradas para a conta: ${accountIdentifier}`);
         return null;
     }
 
@@ -154,8 +154,7 @@ exports.cancelDeviceOrder = async (req, res) => {
         // --- LÓGICA DE VERIFICAÇÃO DE ESTADO APRIMORADA ---
         // Verifica se a ordem já está em um estado final que não permite cancelamento.
         const uncancellableStates = ["CANCELED", "FINISHED", "EXPIRED", "ON_TERMINAL"];
-        if (uncancellableStates.includes(intentDetails.state)) {
-            console.log(`INFO: Tentativa de cancelar ordem no estado '${intentDetails.state}', que não permite cancelamento via API.`);
+        if (uncancellableStates.includes(intentDetails.state)) {            
 
             // Se o estado for 'ON_TERMINAL', é um conflito real. O app precisa saber disso.
             if (intentDetails.state === 'ON_TERMINAL') {
@@ -172,7 +171,7 @@ exports.cancelDeviceOrder = async (req, res) => {
         }
 
         // Se a ordem estiver em um estado que permite cancelamento (ex: "OPEN"), prossegue.
-        console.log(`INFO: Ordem no estado '${intentDetails.state}'. Prosseguindo com o cancelamento.`);
+        // console.log(`INFO: Ordem no estado '${intentDetails.state}'. Prosseguindo com o cancelamento.`);
         const mpResponse = await point.cancelPaymentIntent({
             device_id: deviceId,
             payment_intent_id: paymentIntentId,
@@ -332,7 +331,7 @@ exports.createPreference = async (req, res) => {
         // Se não houver target_collection, usa o padrão da variável de ambiente ou 'vendas'
         if (!metadataObj.target_collection) {
             metadataObj.target_collection = process.env.DEFAULT_TARGET_COLLECTION || 'vendas';
-            console.info("INFO: metadata.target_collection ausente — definindo padrão:", metadataObj.target_collection);
+            // console.info("INFO: metadata.target_collection ausente — definindo padrão:", metadataObj.target_collection);
         }
 
         const body = {
@@ -355,7 +354,7 @@ exports.createPreference = async (req, res) => {
             body.issuer_id = issuer_id;
         }
 
-        console.log("INFO: Criando preferência com payload:", { external_reference: externalReference, items_count: normalizedItems.length, payer: payerPayload.email, notification_url: notificationUrlToUse });
+        // console.log("INFO: Criando preferência com payload:", { external_reference: externalReference, items_count: normalizedItems.length, payer: payerPayload.email, notification_url: notificationUrlToUse });
 
         if (process.env.MP_DEBUG === 'true') {
             // Loga o body completo (útil para debugging) - cuidado com dados sensíveis em produção
@@ -441,12 +440,12 @@ exports.cancelPixOrder = async (req, res) => {
 
         // 2. Verifica se o pagamento pode ser cancelado
         if (currentPayment.status === 'cancelled') {
-            console.log(`INFO: Tentativa de cancelar pagamento PIX ${paymentId} que já está cancelado.`);
+            // console.log(`INFO: Tentativa de cancelar pagamento PIX ${paymentId} que já está cancelado.`);
             return res.status(200).json({ id: currentPayment.id, status: 'cancelled', message: 'Pagamento já estava cancelado.' });
         }
 
         if (currentPayment.status !== 'pending') {
-            console.warn(`WARN: Tentativa de cancelar pagamento PIX ${paymentId} com status '${currentPayment.status}'.`);
+            // console.warn(`WARN: Tentativa de cancelar pagamento PIX ${paymentId} com status '${currentPayment.status}'.`);
             return res.status(409).json({ error: "Conflito: O pagamento não está pendente e não pode ser cancelado.", current_status: currentPayment.status });
         }
 
